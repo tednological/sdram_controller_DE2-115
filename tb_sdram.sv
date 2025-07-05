@@ -70,6 +70,7 @@ generate
         );
     end
 endgenerate
+`ifdef LIGHT_SDRAM_STUB
 //----------------------------------------------------------------
     // 4. Very-light SDRAM functional stub
     //----------------------------------------------------------------
@@ -102,6 +103,7 @@ endgenerate
             dq_drive_en <= 1'b0;           // release bus afterwards
         end
     end
+`endif // LIGHT_SDRAM_STUB
 
     //----------------------------------------------------------------
     // 6. PASS / FAIL monitor & simulation stop
