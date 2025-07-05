@@ -88,15 +88,23 @@ logic [15:0] wait200_cntr; // counts down 200 us
 logic do_refresh; // Tells FSM to enter refresh state
 
 // feed inputs to their registered counterparts
+// Latch incoming Wishbone transaction when stb_i and cyc_i are asserted.
+// Release stb_i_r once the row has been activated to prevent re-triggering.
 always_ff @(posedge clk) begin
     if (rst) begin
-        if(stb_i_r && current_state == S_ACT)
-            stb_i_r <= 1'b0;
-        else if (stb_i && cyc_i) begin
-            addr_r <= addr_i;
+        addr_r  <= 23'd0;
+        dat_i_r <= 32'd0;
+        we_i_r  <= 1'b0;
+        stb_i_r <= 1'b0;
+    end else begin
+        if (stb_i && cyc_i) begin
+            addr_r  <= addr_i;
             dat_i_r <= dat_i;
-            we_i_r <= we_i;
-            stb_i_r <= stb_i;
+            we_i_r  <= we_i;
+            stb_i_r <= 1'b1;
+        end else if (stb_i_r && current_state == S_ACT) begin
+            // Clear strobe once the activate command has been issued
+            stb_i_r <= 1'b0;
         end
     end
 end
@@ -195,17 +203,18 @@ always_comb begin
     unique case (current_state)
         S_INIT            : next_state = S_WAIT200;
 
-        S_WAIT200         : next_state = (wait200_cntr == 16'd0) ? S_INIT_PRE : S_WAIT200;
+        S_WAIT200         : if (wait200_cntr == 16'd0) next_state = S_INIT_PRE; else next_state = S_WAIT200;
 
         S_INIT_PRE        : next_state = S_WAIT_INIT_PRE;
 
-        S_WAIT_INIT_PRE   : next_state = (trp_cntr == 4'd0) ? S_INIT_REF : S_WAIT_INIT_PRE;
+        S_WAIT_INIT_PRE   : if (trp_cntr == 4'd0) next_state = S_INIT_REF; else next_state = S_WAIT_INIT_PRE;
 
         S_INIT_REF        : next_state = S_WAIT_INIT_REF;
 
         S_WAIT_INIT_REF   : begin
                                 if (trc_cntr == 4'd0) begin
-                                    next_state = (init_pre_cntr == 4'd8) ? S_MODE_REG : S_INIT_REF;
+                                    if (init_pre_cntr == 4'd8) next_state = S_MODE_REG;
+                                    else                       next_state = S_INIT_REF;
                                 end else begin
                                     next_state = S_WAIT_INIT_REF;
                                 end
@@ -213,7 +222,7 @@ always_comb begin
 
         S_MODE_REG        : next_state = S_WAIT_MODE_REG;
 
-        S_WAIT_MODE_REG   : next_state = (trcd_cntr == 3'd0) ? S_DONE : S_WAIT_MODE_REG;
+        S_WAIT_MODE_REG   : if (trcd_cntr == 3'd0) next_state = S_DONE; else next_state = S_WAIT_MODE_REG;
 
         S_DONE            : next_state = S_IDLE;
 
@@ -225,13 +234,14 @@ always_comb begin
 
         S_REFRESH         : next_state = S_WAIT_REFRESH;
 
-        S_WAIT_REFRESH    : next_state = (trc_cntr == 4'd0) ? S_IDLE : S_WAIT_REFRESH;
+        S_WAIT_REFRESH    : if (trc_cntr == 4'd0) next_state = S_IDLE; else next_state = S_WAIT_REFRESH;
 
         S_ACT             : next_state = S_WAIT_ACT;
 
         S_WAIT_ACT        : begin
                                 if (trcd_cntr == 3'd0) begin
-                                    next_state = we_i_r ? S_W0 : S_R0;
+                                    if (we_i_r) next_state = S_W0;
+                                    else        next_state = S_R0;
                                 end
                             end
 
@@ -249,7 +259,7 @@ always_comb begin
 
         // ------------- common precharge ----------------
         S_PRE             : next_state = S_WAIT_PRE;
-        S_WAIT_PRE        : next_state = (trp_cntr == 4'd0) ? S_IDLE : S_WAIT_PRE;
+        S_WAIT_PRE        : if (trp_cntr == 4'd0) next_state = S_IDLE; else next_state = S_WAIT_PRE;
 
         default           : next_state = S_ERROR;
     endcase
