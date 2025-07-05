@@ -2,6 +2,7 @@
 //  top.v    DE2-115 + Wishbone SDRAM controller bring-up
 //===============================================================
 `default_nettype none
+`timescale 1ns/1ps
 module top
 (
     // ---- DE2-115 on-board I/O ----
