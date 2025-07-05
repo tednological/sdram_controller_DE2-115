@@ -9,18 +9,6 @@ module tb_sdram;
         $monitor("%0t  locked=%b  c0=%b  areset=%b", $time,
               dut.pll_locked, dut.u_pll.c0, dut.u_pll.areset);
     end
-    reg clk;
-    reg rst;
-
-    // Generate 100 MHz clock
-    initial clk = 0;
-    always #10 clk = ~clk;
-
-    initial begin
-        rst = 1'b0;         // Initially 0
-        #100;             // Wait 
-        rst = 1'b1;         // Then set to 1
-    end
     // SDRAM interface wires
     wire [12:0] DRAM_ADDR;
     wire [1:0]  DRAM_BA;
@@ -33,12 +21,6 @@ module tb_sdram;
     wire        DRAM_RAS_N;
     wire        DRAM_WE_N;
 
-    // Wishbone wires
-    wire [24:0] wb_addr;
-    wire [31:0] wb_wdata, wb_rdata;
-    wire [3:0]  wb_sel;
-    wire        wb_we, wb_stb, wb_cyc, wb_ack, wb_stall;
-    wire        pass_led, fail_led;
 
     logic [7:0] leds;
 
@@ -48,7 +30,7 @@ module tb_sdram;
     // DUT
     top dut (
         .CLOCK_50   (clk50),
-        .KEY        (rst),
+        .KEY        (1'b1),
         .LEDG       (leds),
         .DRAM_ADDR  (DRAM_ADDR),
         .DRAM_BA    (DRAM_BA),
@@ -63,11 +45,6 @@ module tb_sdram;
     );
 
     
-    // test-bench
-    reg nPOR = 0;               // low = in reset
-    initial begin
-        #200_000 nPOR = 1;      // release after 200 Âµs
-    end
 
 // Connect lower 16 bits (DQ[15:0])
 
