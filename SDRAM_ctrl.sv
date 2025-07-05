@@ -195,17 +195,17 @@ always_comb begin
     unique case (current_state)
         S_INIT            : next_state = S_WAIT200;
 
-        S_WAIT200         : next_state = (wait200_cntr == 16'd0) ? S_INIT_PRE : S_WAIT200;
+        S_WAIT200         : next_state = state_t'((wait200_cntr == 16'd0) ? S_INIT_PRE : S_WAIT200);
 
         S_INIT_PRE        : next_state = S_WAIT_INIT_PRE;
 
-        S_WAIT_INIT_PRE   : next_state = (trp_cntr == 4'd0) ? S_INIT_REF : S_WAIT_INIT_PRE;
+        S_WAIT_INIT_PRE   : next_state = state_t'((trp_cntr == 4'd0) ? S_INIT_REF : S_WAIT_INIT_PRE);
 
         S_INIT_REF        : next_state = S_WAIT_INIT_REF;
 
         S_WAIT_INIT_REF   : begin
                                 if (trc_cntr == 4'd0) begin
-                                    next_state = (init_pre_cntr == 4'd8) ? S_MODE_REG : S_INIT_REF;
+                                    next_state = state_t'((init_pre_cntr == 4'd8) ? S_MODE_REG : S_INIT_REF);
                                 end else begin
                                     next_state = S_WAIT_INIT_REF;
                                 end
@@ -213,7 +213,7 @@ always_comb begin
 
         S_MODE_REG        : next_state = S_WAIT_MODE_REG;
 
-        S_WAIT_MODE_REG   : next_state = (trcd_cntr == 3'd0) ? S_DONE : S_WAIT_MODE_REG;
+        S_WAIT_MODE_REG   : next_state = state_t'((trcd_cntr == 3'd0) ? S_DONE : S_WAIT_MODE_REG);
 
         S_DONE            : next_state = S_IDLE;
 
@@ -225,13 +225,13 @@ always_comb begin
 
         S_REFRESH         : next_state = S_WAIT_REFRESH;
 
-        S_WAIT_REFRESH    : next_state = (trc_cntr == 4'd0) ? S_IDLE : S_WAIT_REFRESH;
+        S_WAIT_REFRESH    : next_state = state_t'((trc_cntr == 4'd0) ? S_IDLE : S_WAIT_REFRESH);
 
         S_ACT             : next_state = S_WAIT_ACT;
 
         S_WAIT_ACT        : begin
                                 if (trcd_cntr == 3'd0) begin
-                                    next_state = we_i_r ? S_W0 : S_R0;
+                                    next_state = state_t'(we_i_r ? S_W0 : S_R0);
                                 end
                             end
 
@@ -249,7 +249,7 @@ always_comb begin
 
         // ------------- common precharge ----------------
         S_PRE             : next_state = S_WAIT_PRE;
-        S_WAIT_PRE        : next_state = (trp_cntr == 4'd0) ? S_IDLE : S_WAIT_PRE;
+        S_WAIT_PRE        : next_state = state_t'((trp_cntr == 4'd0) ? S_IDLE : S_WAIT_PRE);
 
         default           : next_state = S_ERROR;
     endcase
